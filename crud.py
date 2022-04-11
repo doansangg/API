@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from exceptions import TBInfoInfoAlreadyExistError, TBInfoNotFoundError
 from models import *
-from schemas import PaginatedTBInfo,LietkeMuonInfo,ND_BTN
+from schemas import PaginatedTBInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,ThietBi_Insert,ThietBi_Send, MuonTra
 
 
 '''
@@ -54,3 +54,65 @@ def get_baithinghiem(session: Session,_id) -> List[ND_BTN]:
         raise TBInfoNotFoundError
     print(result)
     return  result
+
+#/* Insert thiết bị
+def Insert_TB(session: Session, ThB:ThietBi_Send) -> ThietBi:
+    LoaiTB_Info = session.query(LoaiTB).filter(LoaiTB.TenLoaiTB == ThB.TenLoaiTB).first()
+    TB_detail = session.query(ThietBi).filter(ThietBi.TenTB == ThB.TenTB, ThietBi.idLoaiTB == LoaiTB_Info.idLoaiTB).first()
+    if TB_detail is not None:
+        return TBInfoInfoAlreadyExistError
+    # ThietBi_insert = ThietBi_Insert
+    # ThietBi_insert.idLoaiTB = LoaiTB_Info.idLoaiTB
+    # ThietBi_insert.TenTB = ThB.TenTB
+    # #print(ThietBi_insert)
+    new_TB = ThietBi(**{"idLoaiTB":LoaiTB_Info.idLoaiTB,"TenTB":ThB.TenTB})
+    session.add(new_TB)
+    session.commit()
+    session.refresh(new_TB)
+    return new_TB
+
+#/* Insert loại thiết bị
+def Insert_LTB(session: Session, LTB_insert:LoaiThietBi) -> LoaiTB:
+    #print("doan sang")
+    LTB_detail = session.query(LoaiTB).filter(LoaiTB.TenLoaiTB == LTB_insert.TenLoaiTB).first()
+    if LTB_detail is not None:
+        return TBInfoInfoAlreadyExistError
+    new_LTB = LoaiTB(**LTB_insert.dict())
+    session.add(new_LTB)
+    session.commit()
+    session.refresh(new_LTB)
+    return new_LTB
+
+#/* Đăng kí mượn cho giáo viên
+
+def Insert_MuonTra(session:Session, MT: MuonTra) -> Boolean:
+    GV_Detail = session.query(GiaoVien).filter(GiaoVien.TenGV == MT.TenGV).first()
+    TB_Detail = session.query(ThietBi).filter(ThietBi.TenTB==MT.TenTB).first()
+    print("ten lop: ",MT.TenLop)
+    LH_Detail = session.query(LopHoc).filter(LopHoc.TenLop == MT.TenLop).first()
+    # print("doan sang")
+    # Insert PDKSD
+    #new_PDKSD = PhieuDangKySD(**{'idLop':LH_Detail.idLop,'idGV':GV_Detail.idGV, 'TenMonHoc':MT.TenMonHoc,'TenBaiTN':MT.TenBaiTN, 'TietBD':MT.TietBD, 'TietKT':MT.TietKT, 'TrangThai':MT.TrangThai_PDK})
+    new_PDKSD = PhieuDangKySD(**{"idLop":LH_Detail.idLop,"idGV":GV_Detail.idGV, "TenMonHoc":MT.TenMonHoc,"TenBaiTN":MT.TenBaiTN, "Ngay":MT.Ngay, "TietBD":MT.TietBD, "TietKT":MT.TietKT, "TrangThai":MT.TrangThai_PDK})
+    session.add(new_PDKSD)
+    session.commit()
+    session.refresh(new_PDKSD)
+
+    #Insert CT_PhieuDk
+    new_PDK = CT_PhieuDangKySD(**{"idPhieu":new_PDKSD.idPhieu,"idThietBi":TB_Detail.idThietBi})
+    session.add(new_PDK)
+    session.commit()
+    session.refresh(new_PDK)
+
+    #Insert PhieuMuonTra
+    new_PMT = PhieuMuonTra(**{'idGV':GV_Detail.idGV,  'NgayMuon':MT.NgayMuon, 'HanTra':MT.HanTra, 'TrangThai':MT.TrangThai_PMT})
+    session.add(new_PMT)
+    session.commit()
+    session.refresh(new_PMT)
+
+    #Insert CT_PhieuMuonTra
+    new_CTPMT = CT_PhieuMuonTra(**{'idPhieuMuon':new_PMT.idPhieuMuon, 'idThietBi':TB_Detail.idThietBi})
+    session.add(new_CTPMT)
+    session.commit()
+    session.refresh(new_CTPMT)
+    return True

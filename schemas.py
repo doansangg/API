@@ -1,7 +1,10 @@
 # schemas.py
 from datetime import date
+from xmlrpc.client import Boolean
 from pydantic import BaseModel
 from typing import Optional, List
+
+from pymysql import Date
 
 
 # TO support creation and update APIs
@@ -62,3 +65,32 @@ class Get_BTN(BaseModel):
 
 class ND_BTN(BaseModel):
     data: List[Get_BTN]
+
+
+#Insert loại thiết bị
+class LoaiThietBi(BaseModel):
+    TenLoaiTB : str
+
+#Insert bảng thiết bị
+class ThietBi_Insert(BaseModel):
+    TenTB : str
+    idLoaiTB : int
+
+class ThietBi_Send(BaseModel):
+    TenTB : str
+    TenLoaiTB : str
+
+#Insert PhieuMuonTra
+class MuonTra(BaseModel):
+    TenGV : str
+    TenBaiTN: str
+    Ngay: Date
+    TrangThai_PDK : Boolean
+    TenLop : str
+    TenTB: str
+    TietBD : int
+    TietKT : int
+    TenMonHoc: str
+    NgayMuon : Date
+    HanTra : Date
+    TrangThai_PMT : Boolean
