@@ -9,7 +9,6 @@ from schemas import LietkeInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,ThietBi_Insert,
 
 router = APIRouter()
 
-
 # Example of Class based view
 @cbv(router)
 class TB:

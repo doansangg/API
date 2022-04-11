@@ -2,7 +2,6 @@
 
 ## Using FastAPI
 
-
 * Change config - line 6 in database.py:
 ```
 DATABASE_URL = "mysql+mysqldb://root:@localhost:3307/qlkt_ptn"

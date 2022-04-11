@@ -89,6 +89,7 @@ def Insert_LTB(session: Session, LTB_insert:LoaiThietBi) -> LoaiTB:
     session.refresh(new_LTB)
     return new_LTB
 
+
 #/* Đăng kí mượn cho giáo viên
 
 def Insert_MuonTra(session:Session, MT: MuonTra) -> Boolean:

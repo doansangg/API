@@ -5,7 +5,8 @@ from database import Base
 import enum
 from sqlalchemy import ForeignKey
 from pydantic import BaseModel
-
+ 
+ 
 # bảng loại thiết bị
 class LoaiTB(Base):
     __tablename__ = "loaitb"

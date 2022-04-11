@@ -2,7 +2,6 @@
 class TBInfoException(Exception):
     ...
 
-
 class TBInfoNotFoundError(TBInfoException):
     def __init__(self):
         self.status_code = 404
