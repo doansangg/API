@@ -34,7 +34,7 @@ class ChungLoaiTB(BaseModel):
     __tablename__ = "thietbi"
     TenTB : str
     idLoaiTB : int
-
+    TenLoaiTB: str
 
 # TO support list and get APIs
 class ThB(ChungLoaiTB):
@@ -50,6 +50,8 @@ class LietkeInfo(BaseModel):
 # liệt kê thiết bị tới hạn mượn (truyền n nagyf và vào)
 # TO support list and get APIs
 class Muon_ToiHan(BaseModel):
+    idThietBi: int
+    idPhieuMuon: int
     tenTB: str
     HanTra: date
     TenLoaiTB:str
