@@ -22,7 +22,10 @@ select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV and 
 '''
 #/* liệt kê thiết bị theo chủng loại (truyền id vào)*/
 def get_thietbi_chungloai(session: Session, _id: int) -> List[PaginatedTBInfo]:
-    result = session.execute("""select * from ThietBi where idLoaiTB={}""".format(_id)).all()
+    if (_id == 0):
+        result = session.execute("""select * from ThietBi A, LoaiTB B where A.idLoaiTB = B.idLoaiTB""").all()
+    else:
+        result = session.execute("""select * from ThietBi A, LoaiTB B where A.idLoaiTB={} and A.idLoaiTB = B.idLoaiTB""".format(_id)).all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)
@@ -30,8 +33,8 @@ def get_thietbi_chungloai(session: Session, _id: int) -> List[PaginatedTBInfo]:
 
 #/* Liệt kê các thiết bị đang được mượn sắp tới hạn trả (trước 05 ngày)*/
 def get_muon_toihan(session: Session, n: int) -> List[LietkeMuonInfo]:
-    result = session.execute("""select tenTB, HanTra, TenLoaiTB from ThietBi A, LoaiTB B, CT_PhieuMuonTra C, PhieuMuonTra D
-        where A. idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=B.idLoaiTB and D.TrangThai=0 and HanTra<= CURRENT_DATE() + {}""".format(n)).all()
+    result = session.execute("""select A.idThietBi, tenTB, HanTra, TenLoaiTB, D.idPhieuMuon from ThietBi A, LoaiTB B, CT_PhieuMuonTra C, PhieuMuonTra D
+        where A.idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=B.idLoaiTB and D.TrangThai=0 and HanTra<= CURRENT_DATE() + {}""".format(n)).all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)
@@ -40,7 +43,7 @@ def get_muon_toihan(session: Session, n: int) -> List[LietkeMuonInfo]:
 
 #/* -	Liệt kê các thiết bị đã quá hạn trả*/
 def get_quahan(session: Session) -> List[LietkeMuonInfo]:
-    result = session.execute("""select tenTB, HanTra, TenLoaiTB from ThietBi A, LoaiTB B, CT_PhieuMuonTra C, PhieuMuonTra D
+    result = session.execute("""select A.idThietBi, tenTB, HanTra, TenLoaiTB, D.idPhieuMuon from ThietBi A, LoaiTB B, CT_PhieuMuonTra C, PhieuMuonTra D
 where A. idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=B.idLoaiTB and D.TrangThai=0 and HanTra< CURRENT_DATE() """).all()
     if result is None:
         raise TBInfoNotFoundError
@@ -48,8 +51,11 @@ where A. idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=
     return  result
 
 #/*-	Liệt kê các bài thí nghiệm của giáo viên theo ID của giáo viên đó (truyền id vào)*/
-def get_baithinghiem(session: Session,_id) -> List[ND_BTN]:
-    result = session.execute("""select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV and  A.idGV={}""".format(_id)).all()
+def get_baithinghiem(session: Session, _id) -> List[ND_BTN]:
+    if (_id == 0):
+        result = session.execute("""select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV """).all()
+    else :
+        result = session.execute("""select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV and  A.idGV={}""".format(_id)).all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)

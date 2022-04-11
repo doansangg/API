@@ -17,10 +17,8 @@ class TB:
 
     # API to get the list of car info
     @router.get("/chungloai", response_model=LietkeInfo)
-    def list_cars(self, _id: int = 1):
-
+    def list_cars(self, _id: int = 0):
         cars_list = get_thietbi_chungloai(self.session, _id)
-        #print("doan sang")
         print(cars_list)
         response = { "data": cars_list}
 
@@ -47,7 +45,7 @@ class TB:
         return response
 
     @router.get("/nd_btn", response_model=ND_BTN)
-    def get_btn(self, _id: int = 1):
+    def get_btn(self, _id: int = 0):
 
         btn_list =get_baithinghiem(self.session,_id)
         #print("doan sang")
