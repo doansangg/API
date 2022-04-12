@@ -35,7 +35,10 @@ and B.idLoaiTB=D.idLoaiTB and TrangThai= 0
 '''
 #/* liệt kê thiết bị theo chủng loại (truyền id vào)*/
 def get_thietbi_chungloai(session: Session, _id: int) -> List[PaginatedTBInfo]:
-    result = session.execute("""select * from ThietBi where idLoaiTB={}""".format(_id)).all()
+    if (_id == 0):
+        result = session.execute("""select * from ThietBi A, LoaiTB B where A.idLoaiTB = B.idLoaiTB""").all()
+    else:
+        result = session.execute("""select * from ThietBi A, LoaiTB B where A.idThietBi={} and A.idLoaiTB = B.idLoaiTB""".format(_id)).all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)
@@ -62,7 +65,10 @@ where A. idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=
 
 #/*-	Liệt kê các bài thí nghiệm của giáo viên theo ID của giáo viên đó (truyền id vào)*/
 def get_baithinghiem(session: Session,_id) -> List[ND_BTN]:
-    result = session.execute("""select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV and  A.idGV={}""".format(_id)).all()
+    if (_id == 0):
+        result = session.execute("""select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV """).all()
+    else :
+        result = session.execute("""select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV and  A.idGV={}""".format(_id)).all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)
