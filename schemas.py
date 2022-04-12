@@ -14,6 +14,11 @@ class CRLoaiTB(BaseModel):
     
     TenLoaiTB : str
 
+# To support list TB API
+class PaginatedTypeTBInfo(BaseModel):
+    data: List[CRLoaiTB]
+    # class Config:
+    #     orm_mode = True
 
 # TO support list and get APIs
 class TB(CRLoaiTB):

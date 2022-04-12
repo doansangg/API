@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from exceptions import TBInfoInfoAlreadyExistError, TBInfoNotFoundError
 from models import *
-from schemas import PaginatedTBInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,ThietBi_Insert,ThietBi_Send, MuonTra
+from schemas import PaginatedTypeTBInfo, PaginatedTBInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,ThietBi_Insert,ThietBi_Send, MuonTra
 
 
 '''
@@ -21,11 +21,15 @@ where A. idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=
 select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV and  A.idGV=1
 '''
 #/* liệt kê thiết bị theo chủng loại (truyền id vào)*/
+def get_loaithietbi(session: Session) -> List[PaginatedTypeTBInfo]:
+    result = session.execute("""select TenLoaiTB from LoaiTB""").all()
+    return result
+
 def get_thietbi_chungloai(session: Session, _id: int) -> List[PaginatedTBInfo]:
     if (_id == 0):
         result = session.execute("""select * from ThietBi A, LoaiTB B where A.idLoaiTB = B.idLoaiTB""").all()
     else:
-        result = session.execute("""select * from ThietBi A, LoaiTB B where A.idLoaiTB={} and A.idLoaiTB = B.idLoaiTB""".format(_id)).all()
+        result = session.execute("""select * from ThietBi A, LoaiTB B where A.idThietBi={} and A.idLoaiTB = B.idLoaiTB""".format(_id)).all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)
@@ -70,7 +74,7 @@ def Insert_TB(session: Session, ThB:ThietBi_Send) -> ThietBi:
     # ThietBi_insert = ThietBi_Insert
     # ThietBi_insert.idLoaiTB = LoaiTB_Info.idLoaiTB
     # ThietBi_insert.TenTB = ThB.TenTB
-    # #print(ThietBi_insert)
+    print(LoaiTB_Info.idLoaiTB)
     new_TB = ThietBi(**{"idLoaiTB":LoaiTB_Info.idLoaiTB,"TenTB":ThB.TenTB})
     session.add(new_TB)
     session.commit()

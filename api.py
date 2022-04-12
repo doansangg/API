@@ -2,10 +2,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_utils.cbv import cbv
 from sqlalchemy.orm import Session
-from crud import get_thietbi_chungloai,get_muon_toihan,get_quahan,get_baithinghiem,Insert_LTB,Insert_TB,Insert_MuonTra
+from crud import get_thietbi_chungloai,get_muon_toihan,get_quahan,get_baithinghiem,Insert_LTB,Insert_TB,Insert_MuonTra, get_loaithietbi
 from database import get_db
 from exceptions import TBInfoException
-from schemas import LietkeInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,ThietBi_Insert,ThietBi_Send,MuonTra
+from schemas import LietkeInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,ThietBi_Insert,ThietBi_Send,MuonTra, PaginatedTypeTBInfo
 
 router = APIRouter()
 
@@ -13,6 +13,12 @@ router = APIRouter()
 @cbv(router)
 class TB:
     session: Session = Depends(get_db)
+
+    @router.get("/loaithietbi", response_model=PaginatedTypeTBInfo)
+    def list_repo(self):
+        list = get_loaithietbi(self.session)
+        response = { "data": list }
+        return response
 
     # API to get the list of car info
     @router.get("/chungloai", response_model=LietkeInfo)
