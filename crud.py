@@ -3,8 +3,8 @@ from typing import List
 from sqlalchemy.orm import Session
 from exceptions import TBInfoInfoAlreadyExistError, TBInfoNotFoundError
 from models import *
-from schemas import PaginatedTBInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,ThietBi_Insert,ThietBi_Send, MuonTra,Lietke_KhaiThac,Lietke_DKM,Lietke_KTP
-
+from schemas import PaginatedTypeTBInfo, PaginatedTBInfo,LietkeMuonInfo, PaginatedClasses, Lietke_KhaiThac, DangKy_Edit,\
+                    ND_BTN,LoaiThietBi,ThietBi_Edit,ThietBi_Send, MuonTra, PaginatedGiaoVien, Lietke_DKM,Lietke_KTP
 
 '''
 /* liệt kê thiết bị theo chủng loại (truyền id vào)*/
@@ -46,8 +46,8 @@ def get_thietbi_chungloai(session: Session, _id: int) -> List[PaginatedTBInfo]:
 
 #/* Liệt kê các thiết bị đang được mượn sắp tới hạn trả (trước 05 ngày)*/
 def get_muon_toihan(session: Session, n: int) -> List[LietkeMuonInfo]:
-    result = session.execute("""select tenTB, HanTra, TenLoaiTB from ThietBi A, LoaiTB B, CT_PhieuMuonTra C, PhieuMuonTra D
-        where A. idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=B.idLoaiTB and D.TrangThai=0 and HanTra<= CURRENT_DATE() + {}""".format(n)).all()
+    result = session.execute("""select A.idThietBi, tenTB, HanTra, TenLoaiTB, D.idPhieuMuon from ThietBi A, LoaiTB B, CT_PhieuMuonTra C, PhieuMuonTra D
+        where A. idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=B.idLoaiTB and D.TrangThai=0 and CURRENT_DATE() <= HanTra and HanTra<= CURRENT_DATE() + {}""".format(n)).all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)
@@ -56,7 +56,7 @@ def get_muon_toihan(session: Session, n: int) -> List[LietkeMuonInfo]:
 
 #/* -	Liệt kê các thiết bị đã quá hạn trả*/
 def get_quahan(session: Session) -> List[LietkeMuonInfo]:
-    result = session.execute("""select tenTB, HanTra, TenLoaiTB from ThietBi A, LoaiTB B, CT_PhieuMuonTra C, PhieuMuonTra D
+    result = session.execute("""select A.idThietBi, tenTB, HanTra, TenLoaiTB, D.idPhieuMuon from ThietBi A, LoaiTB B, CT_PhieuMuonTra C, PhieuMuonTra D
 where A. idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=B.idLoaiTB and D.TrangThai=0 and HanTra< CURRENT_DATE() """).all()
     if result is None:
         raise TBInfoNotFoundError
@@ -64,11 +64,19 @@ where A. idThietBi= C.idThietBi and C.idPhieuMuon= D.idPhieuMuon and A.idLoaiTB=
     return  result
 
 #/*-	Liệt kê các bài thí nghiệm của giáo viên theo ID của giáo viên đó (truyền id vào)*/
+def get_baithinghiemGV(session: Session,_id) -> List[ND_BTN]:     
+    result = session.execute("""select A.idPhieu, tenMonHoc, tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV and  A.idGV={}""".format(_id)).all()
+    if result is None:
+        raise TBInfoNotFoundError
+    print(result)
+    return  result
+
+#/*-	Liệt kê các bài thí nghiệm của tất cả giáo viên (hoặc theo id bài thí nghiệm)*/
 def get_baithinghiem(session: Session,_id) -> List[ND_BTN]:
     if (_id == 0):
-        result = session.execute("""select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV """).all()
+        result = session.execute("""select A.idPhieu, tenMonHoc, tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV """).all()
     else :
-        result = session.execute("""select tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV and  A.idGV={}""".format(_id)).all()
+        result = session.execute("""select A.idPhieu, tenMonHoc, tenBaiTN, tenGV from PhieuDangKySD A, GiaoVien B where A.idGV=B.idGV and  A.idPhieu={}""".format(_id)).all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)
@@ -105,30 +113,31 @@ def Insert_LTB(session: Session, LTB_insert:LoaiThietBi) -> LoaiTB:
 #/* Đăng kí mượn cho giáo viên
 def Insert_MuonTra(session:Session, MT: MuonTra) -> Boolean:
     GV_Detail = session.query(GiaoVien).filter(GiaoVien.TenGV == MT.TenGV).first()
+    print("ten lop: ",MT.TenLop)
+    LH_Detail = session.query(LopHoc).filter(LopHoc.TenLop == MT.TenLop).first()
+    #Insert PhieuMuonTra
+    new_PMT = PhieuMuonTra(**{'idGV':GV_Detail.idGV,  'NgayMuon':MT.NgayMuon, 'HanTra':MT.HanTra, 'TrangThai':MT.TrangThai_PMT})
+    session.add(new_PMT)
+    session.commit()
+    session.refresh(new_PMT)
+
+    new_PDKSD = PhieuDangKySD(**{"idLop":LH_Detail.idLop,"idGV":GV_Detail.idGV, "TenMonHoc":MT.TenMonHoc,"TenBaiTN":MT.TenBaiTN, "Ngay":MT.Ngay, "TietBD":MT.TietBD, "TietKT":MT.TietKT, "TrangThai":MT.TrangThai_PDK})
+    session.add(new_PDKSD)
+    session.commit()
+    session.refresh(new_PDKSD)
+
     for index in MT.TenTB:
-        TB_Detail = session.query(ThietBi).filter(ThietBi.TenTB==index).first()
-        print("ten lop: ",MT.TenLop)
-        LH_Detail = session.query(LopHoc).filter(LopHoc.TenLop == MT.TenLop).first()
+        TB_Detail = session.query(ThietBi).filter(ThietBi.TenTB==index).first()       
         # print("doan sang")
         # Insert PDKSD
         #new_PDKSD = PhieuDangKySD(**{'idLop':LH_Detail.idLop,'idGV':GV_Detail.idGV, 'TenMonHoc':MT.TenMonHoc,'TenBaiTN':MT.TenBaiTN, 'TietBD':MT.TietBD, 'TietKT':MT.TietKT, 'TrangThai':MT.TrangThai_PDK})
-        new_PDKSD = PhieuDangKySD(**{"idLop":LH_Detail.idLop,"idGV":GV_Detail.idGV, "TenMonHoc":MT.TenMonHoc,"TenBaiTN":MT.TenBaiTN, "Ngay":MT.Ngay, "TietBD":MT.TietBD, "TietKT":MT.TietKT, "TrangThai":MT.TrangThai_PDK})
-        session.add(new_PDKSD)
-        session.commit()
-        session.refresh(new_PDKSD)
-
+        
         #Insert CT_PhieuDk
         new_PDK = CT_PhieuDangKySD(**{"idPhieu":new_PDKSD.idPhieu,"idThietBi":TB_Detail.idThietBi})
         session.add(new_PDK)
         session.commit()
         session.refresh(new_PDK)
-
-        #Insert PhieuMuonTra
-        new_PMT = PhieuMuonTra(**{'idGV':GV_Detail.idGV,  'NgayMuon':MT.NgayMuon, 'HanTra':MT.HanTra, 'TrangThai':MT.TrangThai_PMT})
-        session.add(new_PMT)
-        session.commit()
-        session.refresh(new_PMT)
-
+     
         #Insert CT_PhieuMuonTra
         new_CTPMT = CT_PhieuMuonTra(**{'idPhieuMuon':new_PMT.idPhieuMuon, 'idThietBi':TB_Detail.idThietBi})
         session.add(new_CTPMT)
@@ -177,7 +186,7 @@ and B.idLoaiTB=D.idLoaiTB and TrangThai= 0 """).all()
     return  result
 
 # Lấy danh sách tên thiết bị
-def get_tenloaithietbi(session: Session):
+def get_tenloaithietbi(session: Session) -> List[PaginatedTypeTBInfo]:
     result = session.execute("""select TenLoaiTB from LoaiTB""").all()
     if result is None:
         raise TBInfoNotFoundError
@@ -185,8 +194,8 @@ def get_tenloaithietbi(session: Session):
     return  result
 
 # Lấy danh sách lớp
-def get_tenlop(session: Session):
-    result = session.execute("""select TenLop from LopHoc""").all()
+def get_tenlop(session: Session) -> List[PaginatedClasses]:
+    result = session.execute("""select idLop, TenLop from LopHoc""").all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)
@@ -201,9 +210,50 @@ def get_tenthietbi(session: Session):
     return  result
 
 # Lấy danh sách giáo viên
-def get_tengiaovien(session: Session):
-    result = session.execute("""select TenGV from GiaoVien""").all()
+def get_tengiaovien(session: Session) -> List[PaginatedGiaoVien]:
+    result = session.execute("""select idGV, TenGV from GiaoVien""").all()
     if result is None:
         raise TBInfoNotFoundError
     print(result)
     return  result
+
+#/* Edit thiết bị
+def Edit_TB(session: Session, ThB:ThietBi_Edit) -> ThietBi:
+    Loai = session.query(LoaiTB).filter(LoaiTB.TenLoaiTB == ThB.TenLoaiTB).first()
+    TB_detail = session.query(ThietBi).filter(ThietBi.idThietBi == ThB.idTB).first()
+    if TB_detail is None:
+        return TBInfoNotFoundError
+    TB_detail.idThietBi = TB_detail.idThietBi
+    TB_detail.TenTB = ThB.TenTB
+    TB_detail.idLoaiTB = Loai.idLoaiTB
+    session.commit()
+    return 'success'
+
+#/* Xóa phiếu mượn
+def delete_MuonTra(session:Session, id: int) -> Boolean:
+    phieudangky = session.query(PhieuDangKySD).filter(PhieuDangKySD.idPhieu == id).first()
+    phieumuontra = session.query(PhieuMuonTra).filter(PhieuMuonTra.idPhieuMuon == id).first()
+    ct_phieu = session.query(CT_PhieuDangKySD).filter(CT_PhieuDangKySD.idPhieu == id).all()
+    ct_phieutra = session.query(CT_PhieuMuonTra).filter(CT_PhieuMuonTra.idPhieuMuon == id).all()
+    session.delete(phieudangky)
+    session.delete(phieumuontra)
+    for ct in ct_phieu:
+        session.delete(ct)
+    for ct in ct_phieutra:
+        session.delete(ct)
+    session.commit()
+    return True
+
+#/* Sửa thông tin phiếu đăng ký
+def edit_MuonTra(session:Session, dangky: DangKy_Edit):
+    DK_detail = session.query(PhieuDangKySD).filter(PhieuDangKySD.idPhieu == dangky.idPhieu).first()
+    if DK_detail is None:
+        return TBInfoNotFoundError
+    DK_detail.TenGV = dangky.TenGV
+    DK_detail.TenBaiTN = dangky.TenBaiTN
+    DK_detail.TietBD = dangky.TietBD
+    DK_detail.TietKT = dangky.TietKT
+    DK_detail.TenMonHoc = dangky.TenMonHoc
+    DK_detail.HanTra = dangky.HanTra
+    session.commit()
+    return 'success'

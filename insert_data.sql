@@ -1,4 +1,4 @@
-
+use qlkt_ptn;
 INSERT Into `LoaiTB`(`TenLoaiTB`) VALUES ('Máy chủ'),
 ('Máy để bà'),
 ('Máy xách tay'),

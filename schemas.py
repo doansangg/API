@@ -6,6 +6,25 @@ from typing import Optional, List
 
 from pymysql import Date
 
+#############################
+class GiaoVien(BaseModel):
+    __tablename__ = "giaovien"
+
+    idGV: int
+    TenGV: str
+
+class PaginatedGiaoVien(BaseModel):
+    data: List[GiaoVien]
+
+#####################################333
+class Lop(BaseModel):
+    __tablename__ = "lophoc"
+
+    idLop: int
+    TenLop: str
+
+class PaginatedClasses(BaseModel):
+    data: List[Lop]
 
 # TO support creation and update APIs
 class CRLoaiTB(BaseModel):
@@ -39,7 +58,7 @@ class ChungLoaiTB(BaseModel):
     __tablename__ = "thietbi"
     TenTB : str
     idLoaiTB : int
-
+    TenLoaiTB: str
 
 # TO support list and get APIs
 class ThB(ChungLoaiTB):
@@ -55,6 +74,8 @@ class LietkeInfo(BaseModel):
 # liệt kê thiết bị tới hạn mượn (truyền n nagyf và vào)
 # TO support list and get APIs
 class Muon_ToiHan(BaseModel):
+    idThietBi: int
+    idPhieuMuon: int
     tenTB: str
     HanTra: date
     TenLoaiTB:str
@@ -65,6 +86,8 @@ class LietkeMuonInfo(BaseModel):
 # liệt kê các bài thí nghiệm theo tên giáo viên
 # TO support list and get APIs
 class Get_BTN(BaseModel):
+    idPhieu: int
+    tenMonHoc: str
     tenBaiTN:str
     tenGV:str
 
@@ -85,6 +108,12 @@ class ThietBi_Send(BaseModel):
     TenTB : str
     TenLoaiTB : str
 
+#Update bảng thiết bị
+class ThietBi_Edit(BaseModel):
+    idTB: int
+    TenTB : str
+    TenLoaiTB : str
+    
 #Insert PhieuMuonTra
 class MuonTra(BaseModel):
     TenGV : str
@@ -100,6 +129,15 @@ class MuonTra(BaseModel):
     HanTra : Date
     TrangThai_PMT : Boolean
 
+#Update Phieu Dang ky
+class DangKy_Edit(BaseModel):
+    idPhieu: int
+    TenGV : str
+    TenBaiTN: str
+    TietBD : int
+    TietKT : int
+    TenMonHoc: str
+    HanTra : Date
 
 # liệt kê khai thác thiết bị theo thời gian
 # TO support creation and update APIs

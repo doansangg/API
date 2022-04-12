@@ -3,10 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi_utils.cbv import cbv
 from pymysql import Date
 from sqlalchemy.orm import Session
-from crud import get_tengiaovien, get_thietbi_chungloai,get_tenthietbi, get_tenlop ,get_muon_toihan,get_quahan,get_baithinghiem,Insert_LTB,Insert_TB,Insert_MuonTra,get_dangchomuon,get_khaithacthietbiphong,get_khaithacthoigian, get_tenloaithietbi
+from crud import get_tengiaovien, get_thietbi_chungloai,get_tenthietbi, get_tenlop, Edit_TB, delete_MuonTra,\
+                    get_muon_toihan,get_quahan,get_baithinghiem,Insert_LTB,Insert_TB,Insert_MuonTra,\
+                    get_dangchomuon,get_khaithacthietbiphong,get_khaithacthoigian, get_tenloaithietbi, edit_MuonTra
+            
 from database import get_db
 from exceptions import TBInfoException
-from schemas import LietkeInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,ThietBi_Insert,ThietBi_Send,MuonTra,Lietke_DKM,Lietke_KhaiThac,Lietke_KTP
+from schemas import LietkeInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,PaginatedClasses,ThietBi_Edit,DangKy_Edit,\
+                        ThietBi_Send,MuonTra,Lietke_DKM,Lietke_KhaiThac,Lietke_KTP, PaginatedTypeTBInfo, PaginatedGiaoVien
 
 router = APIRouter()
 
@@ -113,7 +117,7 @@ class TB:
         except TBInfoException as cie:
             raise HTTPException(**cie.__dict__)
 
-    @router.get("/laytenltb")
+    @router.get("/laytenltb", response_model=PaginatedTypeTBInfo)
     def list_tenltb(self):
 
         chungloai_list = get_tenloaithietbi(self.session)
@@ -122,7 +126,7 @@ class TB:
         response = { "data": chungloai_list}
         return response
     
-    @router.get("/laytenlop")
+    @router.get("/laytenlop", response_model=PaginatedClasses)
     def list_tenlop(self):
 
         chungloai_list = get_tenlop(self.session)
@@ -140,11 +144,37 @@ class TB:
         response = { "data": chungloai_list}
         return response
     
-    @router.get("/laytengiaovien")
+    @router.get("/laytengiaovien", response_model=PaginatedGiaoVien)
     def list_tengiaovien(self):
 
         chungloai_list = get_tengiaovien(self.session)
         #print("doan sang")
         print(chungloai_list)
         response = { "data": chungloai_list}
+        return response
+
+    @router.delete('/deleteDK')
+    def delete_DK(self, id: int):
+        try :
+            #print("data: ",LTB.TenLoaiTB)
+            result = delete_MuonTra(self.session,id)
+            return result
+        except TBInfoException as cie:
+            raise HTTPException(**cie.__dict__)
+
+
+    # Api to update device
+    @router.put('/chungloai')
+    def update_device(self, TB: ThietBi_Edit):
+        thietbi = Edit_TB(self.session, TB)
+        response = { "data": thietbi}
+
+        return response
+
+    # Api to update phieudangky
+    @router.put('/dangky')
+    def update_dangky(self, dangky: DangKy_Edit):
+        dangkyedit = edit_MuonTra(self.session, dangky)
+        response = { "data": dangkyedit}
+
         return response
