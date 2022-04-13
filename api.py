@@ -1,16 +1,17 @@
 # api.py
 from fastapi import APIRouter, Depends, HTTPException
+from numpy import insert
 from fastapi_utils.cbv import cbv
 from pymysql import Date
 from sqlalchemy.orm import Session
 from crud import get_tengiaovien, get_thietbi_chungloai,get_tenthietbi, get_tenlop, Edit_TB, delete_MuonTra,\
-                    get_muon_toihan,get_quahan,get_baithinghiem,Insert_LTB,Insert_TB,Insert_MuonTra,\
-                    get_dangchomuon,get_khaithacthietbiphong,get_khaithacthoigian, get_tenloaithietbi, edit_MuonTra
+                    get_muon_toihan,get_quahan,get_baithinghiem,Insert_LTB,Insert_TB,Insert_MuonTra,get_muon,\
+                    get_dangchomuon,get_khaithacthietbiphong,get_khaithacthoigian, get_tenloaithietbi, edit_MuonTra, delete_CTMuonTra, insert_CTMuonTra
             
 from database import get_db
 from exceptions import TBInfoException
 from schemas import LietkeInfo,LietkeMuonInfo,ND_BTN,LoaiThietBi,PaginatedClasses,ThietBi_Edit,DangKy_Edit,\
-                        ThietBi_Send,MuonTra,Lietke_DKM,Lietke_KhaiThac,Lietke_KTP, PaginatedTypeTBInfo, PaginatedGiaoVien
+                        ThietBi_Send,MuonTra,Lietke_DKM,Lietke_KhaiThac,Lietke_KTP, PaginatedTypeTBInfo, PaginatedGiaoVien, CT_MuonTra
 
 router = APIRouter()
 
@@ -178,3 +179,29 @@ class TB:
         response = { "data": dangkyedit}
 
         return response
+
+    @router.delete('/muon_toihan')
+    def delete_listmuon(self, id: int, idDevice: int):
+        try :
+            #print("data: ",LTB.TenLoaiTB)
+            result = delete_CTMuonTra(self.session, id, idDevice)
+            return result
+        except TBInfoException as cie:
+            raise HTTPException(**cie.__dict__)
+
+    @router.get('/muon')
+    def listmuon(self):
+        muon_list = get_muon(self.session)
+        #print("doan sang")
+        print(muon_list)
+        response = { "data": muon_list}
+        return response
+
+    @router.post('/addmuon')
+    def add_listmuon(self, dangky: CT_MuonTra):
+        try :
+            #print("data: ",LTB.TenLoaiTB)
+            result = insert_CTMuonTra(self.session, dangky)
+            return result
+        except TBInfoException as cie:
+            raise HTTPException(**cie.__dict__)

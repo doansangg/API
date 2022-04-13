@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from exceptions import TBInfoInfoAlreadyExistError, TBInfoNotFoundError
 from models import *
 from schemas import PaginatedTypeTBInfo, PaginatedTBInfo,LietkeMuonInfo, PaginatedClasses, Lietke_KhaiThac, DangKy_Edit,\
-                    ND_BTN,LoaiThietBi,ThietBi_Edit,ThietBi_Send, MuonTra, PaginatedGiaoVien, Lietke_DKM,Lietke_KTP
+                    ND_BTN,LoaiThietBi,ThietBi_Edit,ThietBi_Send, MuonTra, PaginatedGiaoVien, Lietke_DKM,Lietke_KTP, CT_MuonTra
 
 '''
 /* liệt kê thiết bị theo chủng loại (truyền id vào)*/
@@ -53,6 +53,14 @@ def get_muon_toihan(session: Session, n: int) -> List[LietkeMuonInfo]:
     print(result)
     return  result
 
+#/* Liệt kê các thiết bị đang được mượn chưa tới hạn trả */
+def get_muon(session: Session) -> List[LietkeMuonInfo]:
+    result = session.execute("""select * from PhieuMuonTra D
+        where D.TrangThai=0 and CURRENT_DATE() <= HanTra""").all()
+    if result is None:
+        raise TBInfoNotFoundError
+    print(result)
+    return  result
 
 #/* -	Liệt kê các thiết bị đã quá hạn trả*/
 def get_quahan(session: Session) -> List[LietkeMuonInfo]:
@@ -244,6 +252,14 @@ def delete_MuonTra(session:Session, id: int) -> Boolean:
     session.commit()
     return True
 
+#/* Xóa chi tiết mượn trả (trả thiết bị)
+def delete_CTMuonTra(session:Session, id: int, idDevice: int) -> Boolean:
+    ct_phieutra = session.query(CT_PhieuMuonTra).filter(CT_PhieuMuonTra.idPhieuMuon == id, CT_PhieuMuonTra.idThietBi == idDevice).all()
+    for ct in ct_phieutra:
+        session.delete(ct)
+    session.commit()
+    return True
+
 #/* Sửa thông tin phiếu đăng ký
 def edit_MuonTra(session:Session, dangky: DangKy_Edit):
     DK_detail = session.query(PhieuDangKySD).filter(PhieuDangKySD.idPhieu == dangky.idPhieu).first()
@@ -257,3 +273,14 @@ def edit_MuonTra(session:Session, dangky: DangKy_Edit):
     DK_detail.HanTra = dangky.HanTra
     session.commit()
     return 'success'
+
+#/* Muượn thiết bị
+def insert_CTMuonTra(session:Session, dangky: CT_MuonTra):
+    for index in dangky.idThietBi:
+        print(index)
+        #Insert CT_PhieuMuonTra
+        new_CTPMT = CT_PhieuMuonTra(**{'idPhieuMuon':int(dangky.idPhieu), 'idThietBi':int(index)})
+        session.add(new_CTPMT)
+        session.commit()
+        session.refresh(new_CTPMT)
+    return True

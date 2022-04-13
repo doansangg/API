@@ -129,6 +129,11 @@ class MuonTra(BaseModel):
     HanTra : Date
     TrangThai_PMT : Boolean
 
+#Insert chitietmuontra
+class CT_MuonTra(BaseModel):
+    idPhieu: str
+    idThietBi: List[str]
+    
 #Update Phieu Dang ky
 class DangKy_Edit(BaseModel):
     idPhieu: int
